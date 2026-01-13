@@ -1,7 +1,7 @@
 import example
 
-EMAIL = "user4328838185958"  
-PASSWORD = "@J63H1ZFg"         
+EMAIL = "user1097024961937"  
+PASSWORD = "@Ixy27qCQXu7Mxn"         
 
 def main():
     print("Bắt đầu quá trình đăng nhập TikTok...")

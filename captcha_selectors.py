@@ -1,13 +1,13 @@
 class Wrappers:
-    V1 = ".captcha-disable-scroll"
+    V1 = "#captcha-verify-container-main-page"
     V2 = ".captcha-verify-container"
 
 class RotateV1:
-    INNER = "[data-testid=whirl-inner-img]"
-    OUTER = "[data-testid=whirl-outer-img]"
-    SLIDE_BAR = ".captcha_verify_slide--slidebar"
+    INNER = "#captcha-verify-container-main-page img.cap-absolute"
+    OUTER = "#captcha-verify-container-main-page img:first-child"
+    SLIDE_BAR = "#captcha-verify-container-main-page .cap-rounded-full"
     SLIDER_DRAG_BUTTON = ".secsdk-captcha-drag-icon"
-    UNIQUE_IDENTIFIER = ".captcha-disable-scroll [data-testid=whirl-inner-img]"
+    UNIQUE_IDENTIFIER = "#captcha-verify-container-main-page img.cap-absolute"
 
 class RotateV2:
     INNER = ".captcha-verify-container > div > div > div > img.cap-absolute"

@@ -19,16 +19,27 @@ def human_type(element, text, min_delay=0.05, max_delay=0.2):
         time.sleep(random.uniform(min_delay, max_delay))
 
 def example(email, password):
-    # Setup Options
+    # Setup Option
+
     chrome_options = Options()
+    chrome_options.binary_location = r"C:/Program Files/Google/Chrome/Application/chrome.exe"
     chrome_options.add_argument("--window-size=1500,960")
     chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    chrome_options.add_argument("--disable-blink-features=AutomationControlled") 
+    chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
     chrome_options.add_experimental_option('useAutomationExtension', False)
+
+
+    user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    chrome_options.add_argument(f'user-agent={user_agent}')
+
 
     # Khởi tạo Driver
     try:
         service = Service(ChromeDriverManager().install())
         driver = webdriver.Chrome(service=service, options=chrome_options)
+        driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+
     except Exception as e:
         print(f"Lỗi khởi tạo Driver: {e}")
         return
@@ -59,8 +70,6 @@ def example(email, password):
     login_btn.click()
     time.sleep(2)
 
-    time.sleep(2)
-
     # Xử lý Captcha
     print("Đang kiểm tra Captcha...")
     for i in range(5):
@@ -68,7 +77,7 @@ def example(email, password):
             captcha_check = driver.find_elements(By.ID, "captcha-verify-container-main-page")
             
             if captcha_check and captcha_check[0].is_displayed():
-                print("⚠️ Captcha xuất hiện, đang xử lý...")
+                print("Captcha xuất hiện, đang xử lý...")
                 solver = SeleniumSolver(driver)
                 
                 if solver.captcha_is_present():
