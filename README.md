@@ -1,10 +1,31 @@
-# TikTok-Captcha-Rotate-Captcha-
-This is a solution but it's not that accurate. 
 
-I used it 1-2 months ago for tiktok automation where I had to login.
+### 2. Clone project
+```bash
+git clone <repository-url>
+```
 
-The script will just solve this type of captcha for tiktok. (puzzle captcha is already open source. not by me)
+### 3. Tạo virtual environment
+```bash
+python -m venv .venv
+.\.venv\Scripts\Activate
+```
 
-![image](https://user-images.githubusercontent.com/82040488/232564752-33f1860e-7970-40aa-b90d-dc7ccd9b18df.png)
+### 4. Cài đặt dependencies
+```bash
+pip install selenium webdriver-manager requests Pillow pydantic
+```
 
+## Sử dụng
 
+### 1. Cấu hình thông tin đăng nhập
+
+Chỉnh sửa file `run_example.py`:
+```python
+EMAIL = "your_email@example.com"  
+PASSWORD = "your_password"
+```
+
+### 2. Chạy tool
+```bash
+python run_example.py
+```
