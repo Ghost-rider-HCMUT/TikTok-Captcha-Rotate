@@ -19,124 +19,139 @@ def human_type(element, text, min_delay=0.05, max_delay=0.2):
         time.sleep(random.uniform(min_delay, max_delay))
 
 def example(email, password):
-    # Setup Option
+    while True:  # Loop đến khi nào login thành công
+        # Setup Option
 
-    chrome_options = Options()
-    # chrome_options.binary_location = r"C:/Program Files/Google/Chrome/Application/chrome.exe"
-    chrome_options.binary_location = r"C:/Program Files/CocCoc/Browser/Application/browser.exe"
-    chrome_options.add_argument("--window-size=1200,960")
-    chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
-    chrome_options.add_argument("--disable-blink-features=AutomationControlled") 
-    chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
-    chrome_options.add_experimental_option('useAutomationExtension', False)
-    user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-    chrome_options.add_argument(f'user-agent={user_agent}')
-    prefs = {
-    "credentials_enable_service": False,  # Tắt dịch vụ lưu thông tin đăng nhập
-    "profile.password_manager_enabled": False # Tắt trình quản lý mật khẩu hoàn toàn
-}
-    chrome_options.add_experimental_option("prefs", prefs)
+        chrome_options = Options()
+        # chrome_options.binary_location = r"C:/Program Files/Google/Chrome/Application/chrome.exe"
+        chrome_options.binary_location = r"C:/Program Files/CocCoc/Browser/Application/browser.exe"
+        chrome_options.add_argument("--window-size=1200,960")
+        chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+        chrome_options.add_argument("--disable-blink-features=AutomationControlled") 
+        chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+        chrome_options.add_experimental_option('useAutomationExtension', False)
+        user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        chrome_options.add_argument(f'user-agent={user_agent}')
+        prefs = {
+        "credentials_enable_service": False,  # Tắt dịch vụ lưu thông tin đăng nhập
+        "profile.password_manager_enabled": False # Tắt trình quản lý mật khẩu hoàn toàn
+    }
+        chrome_options.add_experimental_option("prefs", prefs)
 
-
-    # Khởi tạo Driver
-    try:
-        service = Service(ChromeDriverManager().install())
-        driver = webdriver.Chrome(service=service, options=chrome_options)
-        driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
-
-    except Exception as e:
-        print(f"Lỗi khởi tạo Driver: {e}")
-        return
-
-    wait = WebDriverWait(driver, 10)
-
-    print("--- Bắt đầu Login ---")
-    
-    driver.get("https://www.tiktok.com/login/phone-or-email/email")
-
-    # Nhập Email
-    print("Nhập Email...")
-    email_input = wait.until(EC.element_to_be_clickable((By.NAME, "username")))
-    email_input.click()
-    email_input.clear()
-    human_type(email_input, email)
-    time.sleep(1)
-
-    # Nhập Password
-    print("Nhập Password...")
-    pass_input = driver.find_element(By.CSS_SELECTOR, 'input[type="password"]')
-    human_type(pass_input, password)
-    time.sleep(1)
-
-    # Click Login
-    print("Click Login...")
-    login_btn = driver.find_element(By.CSS_SELECTOR, 'button[type="submit"]')
-    login_btn.click()
-    time.sleep(2)
-
-    # Xử lý Captcha
-    print("Đang kiểm tra Captcha...")
-    for i in range(5):
+        # Khởi tạo Driver
         try:
-            captcha_check = driver.find_element(By.ID, "captcha-verify-container-main-page")
+            service = Service(ChromeDriverManager().install())
+            driver = webdriver.Chrome(service=service, options=chrome_options)
+            driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+
+        except Exception as e:
+            print(f"Lỗi khởi tạo Driver: {e}")
+            continue  # Thử lại thay vì return
+
+        wait = WebDriverWait(driver, 10)
+
+        try:
+            print("--- Bắt đầu Login ---")
             
-            if captcha_check and captcha_check.is_displayed():
-                print("Captcha xuất hiện, đang xử lý...")
+            driver.get("https://www.tiktok.com/login/phone-or-email/email")
+
+            # Nhập Email
+            print("Nhập Email...")
+            email_input = wait.until(EC.element_to_be_clickable((By.NAME, "username")))
+            email_input.click()
+            email_input.clear()
+            human_type(email_input, email)
+            time.sleep(1)
+
+            # Nhập Password
+            print("Nhập Password...")
+            pass_input = driver.find_element(By.CSS_SELECTOR, 'input[type="password"]')
+            human_type(pass_input, password)
+            time.sleep(1)
+
+            # Click Login
+            print("Click Login...")
+            login_btn = driver.find_element(By.CSS_SELECTOR, 'button[type="submit"]')
+            login_btn.click()
+            time.sleep(2)
+
+            # Xử lý Captcha
+            print("Đang kiểm tra Captcha...")
+            for i in range(5):
                 try:
-                    solver = SeleniumSolver(driver)
-                    print("Solver created")
-                except Exception as e:
-                    print(f"❌ Error creating solver: {e}")
-                    import traceback
-                    traceback.print_exc()
-                
-                captcha_type = CaptchaType.OTHER 
-              
-                try:
-                    if captcha_type == CaptchaType.OTHER:
-                        if driver.find_element(By.XPATH, "//span[contains(text(), 'Select 2 objects')]"):
-                            captcha_type = CaptchaType.SELECT_OBJECTS
-                            print("Captcha loại SELECT_OBJECTS.")
-                        elif captcha_check.find_element(By.XPATH, "//img[contains(@class, 'cap-absolute')]"):
-                            captcha_type = CaptchaType.ROTATE_V1
-                            print("Captcha loại ROTATE_V1.")
-                except:
-                    pass
+                    captcha_check = driver.find_element(By.ID, "captcha-verify-container-main-page")
                     
-                if captcha_type == CaptchaType.ROTATE_V1:
-                    print("Đang giải captcha RotateV1...")
-                    solver.solve_rotate()
-                    time.sleep(2)
+                    if captcha_check and captcha_check.is_displayed():
+                        print("Captcha xuất hiện, đang xử lý...")
+                        try:
+                            solver = SeleniumSolver(driver)
+                            print("Solver created")
+                        except Exception as e:
+                            print(f"❌ Error creating solver: {e}")
+                            import traceback
+                            traceback.print_exc()
+                        
+                        captcha_type = CaptchaType.OTHER 
+                      
+                        try:
+                            if captcha_type == CaptchaType.OTHER:
+                                if driver.find_element(By.XPATH, "//span[contains(text(), 'Select 2 objects')]"):
+                                    captcha_type = CaptchaType.SELECT_OBJECTS
+                                    print("Captcha loại SELECT_OBJECTS.")
+                                elif driver.find_element(By.XPATH, "//span[contains(text(), 'Kéo thanh trượt') or contains(text(), 'Drag the slider')]"):
+                                    captcha_type = CaptchaType.ROTATE_V1
+                                    print("Captcha loại ROTATE_V1.")
+                        except:
+                            pass
+                            
+                        if captcha_type == CaptchaType.ROTATE_V1:
+                            print("Đang giải captcha RotateV1...")
+                            solver.solve_rotate()
+                            time.sleep(2)
+                            break
+                        elif captcha_type == CaptchaType.SELECT_OBJECTS:
+                            print("Đang giải captcha SELECT_OBJECTS...")    
+                            time.sleep(2)
+                            # Không quit, để tiếp tục thử
+                            break
+                        elif captcha_type == CaptchaType.OTHER:
+                            print("Loại Captcha không được hỗ trợ.")
+                            time.sleep(2)
+                            # Không quit, để tiếp tục thử
+                            break
+                    else:
+                        print("Không thấy Captcha (hoặc đã biến mất).")
+                        break
+                except Exception:
                     break
-                elif captcha_type == CaptchaType.SELECT_OBJECTS:
-                    print("Đang giải captcha SELECT_OBJECTS...")    
-                    time.sleep(2)
-                    driver.quit()
-                    return
-                elif captcha_type == CaptchaType.OTHER:
-                    print("Loại Captcha không được hỗ trợ.")
-                    time.sleep(2)
-                    driver.quit()
-                    return
-            else:
-                print("Không thấy Captcha (hoặc đã biến mất).")
-                break
-        except Exception:
-            break
-        
-        time.sleep(1)
+                
+                time.sleep(1)
 
-    # Chờ Login thành công
-    print("Đang chờ xác nhận đăng nhập...")
-    try:
-        profile_icon = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, 'div[data-e2e="profile-icon"]'))
-        )
-        print("✅ Đăng nhập thành công!")
-        cookies = driver.get_cookies()
-    except TimeoutException:
-        print("Hết thời gian chờ hoặc Login thất bại.")
+            # Chờ Login thành công
+            print("Đang chờ xác nhận đăng nhập...")
+            try:
+                profile_icon = WebDriverWait(driver, 10).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, 'div[data-e2e="profile-icon"]'))
+                )
+                print("✅ Đăng nhập thành công!")
+                cookies = driver.get_cookies()
+                
+                time.sleep(5)
+                driver.quit()
+                return  # Thoát khỏi while loop khi login thành công
+                
+            except TimeoutException:
+                print("Hết thời gian chờ hoặc Login thất bại. Thử lại...")
+                driver.quit()
+                time.sleep(3)  # Đợi 3 giây trước khi thử lại
+                continue  # Tiếp tục loop để thử lại
 
-    time.sleep(5)
-    driver.quit()
+        except Exception as e:
+            print(f"Lỗi trong quá trình đăng nhập: {e}")
+            try:
+                driver.quit()
+            except:
+                pass
+            time.sleep(3)  # Đợi trước khi thử lại
+            continue  # Tiếp tục loop để thử lại
 

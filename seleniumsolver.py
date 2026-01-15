@@ -61,17 +61,79 @@ class SeleniumSolver(Solver):
         return CaptchaType.OTHER
 
     def solve_rotate(self) -> None:
+        print("🔄 [DEBUG] solve_rotate() - Bắt đầu giải captcha rotate")
+        
+        # Bước 1: Kiểm tra selector INNER có tồn tại không
+        print(f"🔍 [DEBUG] Kiểm tra selector INNER: {selectors.RotateV1.INNER}")
         if not self._any_selector_in_list_present([selectors.RotateV1.INNER]):
+            print("❌ [DEBUG] Không tìm thấy selector INNER, thoát khỏi solve_rotate")
+            return
+        print("✅ [DEBUG] Tìm thấy selector INNER")
+        
+        # Bước 2: Lấy ảnh outer
+        print(f"🖼️  [DEBUG] Lấy ảnh OUTER từ selector: {selectors.RotateV1.OUTER}")
+        try:
+            outer = self.fetch_image_from_element(selectors.RotateV1.OUTER)
+            print(f"✅ [DEBUG] Lấy ảnh OUTER thành công, kích thước: {len(outer) if outer else 0} bytes")
+        except Exception as e:
+            print(f"❌ [DEBUG] Lỗi khi lấy ảnh OUTER: {e}")
             return
         
-        outer = self.fetch_image_from_element(selectors.RotateV1.OUTER)
-        inner = self.fetch_image_from_element(selectors.RotateV1.INNER)
+        # Bước 3: Lấy ảnh inner  
+        print(f"🖼️  [DEBUG] Lấy ảnh INNER từ selector: {selectors.RotateV1.INNER}")
+        try:
+            inner = self.fetch_image_from_element(selectors.RotateV1.INNER)
+            print(f"✅ [DEBUG] Lấy ảnh INNER thành công, kích thước: {len(inner) if inner else 0} bytes")
+        except Exception as e:
+            print(f"❌ [DEBUG] Lỗi khi lấy ảnh INNER: {e}")
+            return
         
-        solution = self.client.rotate(outer, inner)
-        slide_bar_width = self._get_element_width(selectors.RotateV1.SLIDE_BAR)
-        slider_button_width = self._get_element_width(selectors.RotateV1.SLIDER_DRAG_BUTTON)
-        distance = compute_rotate_slide_distance(solution.angle, slide_bar_width, slider_button_width)
-        self._drag_element_horizontal(selectors.RotateV1.SLIDER_DRAG_BUTTON, distance, None, 1)
+        # Bước 4: Gọi API để tính toán góc xoay
+        print("🤖 [DEBUG] Gọi API client.rotate() để tính toán góc xoay")
+        try:
+            solution = self.client.rotate(outer, inner)
+            print(f"✅ [DEBUG] API trả về góc xoay: {solution.angle} độ")
+        except Exception as e:
+            print(f"❌ [DEBUG] Lỗi khi gọi API rotate: {e}")
+            return
+        
+        # Bước 5: Lấy kích thước thanh trượt
+        print(f"📏 [DEBUG] Lấy chiều rộng slide bar từ selector: {selectors.RotateV1.SLIDE_BAR}")
+        try:
+            slide_bar_width = self._get_element_width(selectors.RotateV1.SLIDE_BAR)
+            print(f"✅ [DEBUG] Chiều rộng slide bar: {slide_bar_width}px")
+        except Exception as e:
+            print(f"❌ [DEBUG] Lỗi khi lấy chiều rộng slide bar: {e}")
+            return
+        
+        # Bước 6: Lấy kích thước nút kéo
+        print(f"📏 [DEBUG] Lấy chiều rộng slider button từ selector: {selectors.RotateV1.SLIDER_DRAG_BUTTON}")
+        try:
+            slider_button_width = self._get_element_width(selectors.RotateV1.SLIDER_DRAG_BUTTON)
+            print(f"✅ [DEBUG] Chiều rộng slider button: {slider_button_width}px")
+        except Exception as e:
+            print(f"❌ [DEBUG] Lỗi khi lấy chiều rộng slider button: {e}")
+            return
+        
+        # Bước 7: Tính toán khoảng cách cần kéo
+        print(f"🧮 [DEBUG] Tính toán khoảng cách kéo với góc {solution.angle}°, slide_bar: {slide_bar_width}px, button: {slider_button_width}px")
+        try:
+            distance = compute_rotate_slide_distance(solution.angle, slide_bar_width, slider_button_width)
+            print(f"✅ [DEBUG] Khoảng cách cần kéo: {distance}px")
+        except Exception as e:
+            print(f"❌ [DEBUG] Lỗi khi tính toán khoảng cách: {e}")
+            return
+        
+        # Bước 8: Thực hiện kéo nút trượt
+        print(f"👆 [DEBUG] Bắt đầu kéo slider button {distance}px")
+        try:
+            self._drag_element_horizontal(selectors.RotateV1.SLIDER_DRAG_BUTTON, distance, None, 1)
+            print("✅ [DEBUG] Hoàn thành kéo slider button")
+        except Exception as e:
+            print(f"❌ [DEBUG] Lỗi khi kéo slider button: {e}")
+            return
+        
+        print("🎉 [DEBUG] solve_rotate() hoàn thành thành công!")
 
     def _get_element_width(self, selector: str) -> int:
         e = self.chromedriver.find_element(By.CSS_SELECTOR, selector)
