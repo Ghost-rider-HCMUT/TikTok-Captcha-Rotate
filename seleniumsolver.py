@@ -35,24 +35,29 @@ class SeleniumSolver(Solver):
                 return img_base64
             except Exception:
                 return None
-        
+    
     def captcha_is_present(self, timeout: int = 15) -> bool:
-        for _ in range(timeout * 2):
-            if self._any_selector_in_list_present([selectors.Wrappers.V1]):
-                return True
-            if self._any_selector_in_list_present([selectors.Wrappers.V2]):
+        end_time = time.time() + timeout
+        while time.time() < end_time:
+            if self._any_selector_in_list_present([
+                selectors.Wrappers.V1,
+                selectors.Wrappers.V2
+            ]):
                 return True
             time.sleep(0.5)
         return False
+    
 
     def identify_captcha(self) -> CaptchaType:
-        if self._any_selector_in_list_present([selectors.RotateV1.UNIQUE_IDENTIFIER]):
+        # Kiểm tra SELECT_OBJECTS trước (dựa vào alt text)
+        if self._is_select_objects_captcha():
+            self.version = 2
+            return CaptchaType.SELECT_OBJECTS
+        # Kiểm tra V1 với nhiều điều kiện
+        if self._is_rotate_captcha_v1():
             self.version = 1
             return CaptchaType.ROTATE_V1
-        if self._any_selector_in_list_present([selectors.RotateV2.UNIQUE_IDENTIFIER]):
-            self.version = 2
-            return CaptchaType.ROTATE_V2
-        # Còn lại trả về OTHER để báo hiệu không phải rotate
+        # Còn lại trả về OTHER để báo hiệu không nhận ra
         return CaptchaType.OTHER
 
     def solve_rotate(self) -> None:
@@ -94,3 +99,77 @@ class SeleniumSolver(Solver):
                 if ele.is_displayed():
                     return True
         return False
+    
+    def _is_rotate_captcha_v1(self) -> bool:
+        """Kiểm tra xem có phải là captcha xoay tròn V1 không"""
+        # 1. Kiểm tra container chính
+        if not self._any_selector_in_list_present([selectors.Wrappers.V1]):
+            return False
+            
+        # 2. Kiểm tra có ảnh với clip-path: circle
+        circular_images = self.chromedriver.find_elements(
+            By.CSS_SELECTOR, 
+            '#captcha-verify-container-main-page img[style*="clip-path: circle"]'
+        )
+        if len(circular_images) < 2:  # Cần ít nhất 2 ảnh (outer + inner)
+            return False
+            
+        # 3. Kiểm tra có ảnh absolute (mảnh ghép)
+        if not self._any_selector_in_list_present([selectors.RotateV1.INNER]):
+            return False
+            
+        # 4. Kiểm tra có thanh trượt tròn
+        if not self._any_selector_in_list_present([selectors.RotateV1.SLIDE_BAR]):
+            return False
+            
+        return True
+    
+    def _is_select_objects_captcha(self) -> bool:
+        """Kiểm tra xem có phải là captcha chọn objects không (dựa vào alt text)"""
+        # 1. Kiểm tra container chính
+        if not self._any_selector_in_list_present([selectors.Wrappers.V2]):
+            return False
+            
+        # 2. Kiểm tra có ảnh với alt="Verify that you're not a robot"
+        verify_images = self.chromedriver.find_elements(
+            By.CSS_SELECTOR,
+            'img[alt="Verify that you\'re not a robot"]'
+        )
+        if len(verify_images) == 0:
+            return False
+            
+        # 3. Kiểm tra có text instruction về "Select 2 objects"
+        instruction_elements = self.chromedriver.find_elements(
+            By.XPATH,
+            '//span[contains(text(), "Select 2 objects")]'
+        )
+        if len(instruction_elements) == 0:
+            return False
+            
+        # 4. Đảm bảo không phải rotate captcha (không có clip-path: circle)
+        circular_images = self.chromedriver.find_elements(
+            By.CSS_SELECTOR,
+            'img[style*="clip-path: circle"]'
+        )
+        if len(circular_images) > 0:  # Nếu có clip-path circle thì là rotate captcha
+            return False
+            
+        return True
+    
+    def _is_rotate_captcha_v2(self) -> bool:
+        """Kiểm tra xem có phải là captcha xoay tròn V2 không"""
+        # Tương tự như V1 nhưng với selectors V2
+        if not self._any_selector_in_list_present([selectors.Wrappers.V2]):
+            return False
+            
+        circular_images = self.chromedriver.find_elements(
+            By.CSS_SELECTOR, 
+            '.captcha-verify-container img[style*="clip-path: circle"]'
+        )
+        if len(circular_images) < 2:
+            return False
+            
+        if not self._any_selector_in_list_present([selectors.RotateV2.INNER]):
+            return False
+            
+        return True

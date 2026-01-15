@@ -7,7 +7,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException, NoSuchElementException
+from selenium.common.exceptions import TimeoutException
 import captcha_selectors as selectors
 from seleniumsolver import SeleniumSolver
 from captchatype import CaptchaType
@@ -22,16 +22,20 @@ def example(email, password):
     # Setup Option
 
     chrome_options = Options()
-    chrome_options.binary_location = r"C:/Program Files/Google/Chrome/Application/chrome.exe"
-    chrome_options.add_argument("--window-size=1500,960")
+    # chrome_options.binary_location = r"C:/Program Files/Google/Chrome/Application/chrome.exe"
+    chrome_options.binary_location = r"C:/Program Files/CocCoc/Browser/Application/browser.exe"
+    chrome_options.add_argument("--window-size=1200,960")
     chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
     chrome_options.add_argument("--disable-blink-features=AutomationControlled") 
     chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
     chrome_options.add_experimental_option('useAutomationExtension', False)
-
-
     user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     chrome_options.add_argument(f'user-agent={user_agent}')
+    prefs = {
+    "credentials_enable_service": False,  # Tắt dịch vụ lưu thông tin đăng nhập
+    "profile.password_manager_enabled": False # Tắt trình quản lý mật khẩu hoàn toàn
+}
+    chrome_options.add_experimental_option("prefs", prefs)
 
 
     # Khởi tạo Driver
@@ -74,28 +78,48 @@ def example(email, password):
     print("Đang kiểm tra Captcha...")
     for i in range(5):
         try:
-            captcha_check = driver.find_elements(By.ID, "captcha-verify-container-main-page")
+            captcha_check = driver.find_element(By.ID, "captcha-verify-container-main-page")
             
-            if captcha_check and captcha_check[0].is_displayed():
+            if captcha_check and captcha_check.is_displayed():
                 print("Captcha xuất hiện, đang xử lý...")
-                solver = SeleniumSolver(driver)
+                try:
+                    solver = SeleniumSolver(driver)
+                    print("Solver created")
+                except Exception as e:
+                    print(f"❌ Error creating solver: {e}")
+                    import traceback
+                    traceback.print_exc()
                 
-                if solver.captcha_is_present():
-                    captcha_type = solver.identify_captcha()
-                    print(f"Loại captcha: {captcha_type}")
-                    time.sleep(2)
+                captcha_type = CaptchaType.OTHER 
+              
+                try:
+                    if captcha_type == CaptchaType.OTHER:
+                        if driver.find_element(By.XPATH, "//span[contains(text(), 'Select 2 objects')]"):
+                            captcha_type = CaptchaType.SELECT_OBJECTS
+                            print("Captcha loại SELECT_OBJECTS.")
+                        elif captcha_check.find_element(By.XPATH, "//img[contains(@class, 'cap-absolute')]"):
+                            captcha_type = CaptchaType.ROTATE_V1
+                            print("Captcha loại ROTATE_V1.")
+                except:
+                    pass
                     
-                    if captcha_type == CaptchaType.ROTATE_V1:
-                        print("Đang giải captcha RotateV1...")
-                        solver.solve_rotate()
-                        time.sleep(2)
-                        break
-                    else:
-                        print(f"Captcha {captcha_type} không phải ROTATE_V1")
-                        driver.quit()
-                        return
+                if captcha_type == CaptchaType.ROTATE_V1:
+                    print("Đang giải captcha RotateV1...")
+                    solver.solve_rotate()
+                    time.sleep(2)
+                    break
+                elif captcha_type == CaptchaType.SELECT_OBJECTS:
+                    print("Đang giải captcha SELECT_OBJECTS...")    
+                    time.sleep(2)
+                    driver.quit()
+                    return
+                elif captcha_type == CaptchaType.OTHER:
+                    print("Loại Captcha không được hỗ trợ.")
+                    time.sleep(2)
+                    driver.quit()
+                    return
             else:
-                print("✅ Không thấy Captcha (hoặc đã biến mất).")
+                print("Không thấy Captcha (hoặc đã biến mất).")
                 break
         except Exception:
             break
